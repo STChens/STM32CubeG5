@@ -103,6 +103,7 @@
         "dynamic_values": [
           {
             "type": "WRP",
+            "mirror_first_bank": true,
             "ob_name_per_bank": [
               [
                 "WRPG1"
@@ -115,6 +116,7 @@
           },
           {
             "type": "HDP",
+            "mirror_first_bank": true,
             "ob_name_per_bank": [
               [
                 "HDP1_STRT",

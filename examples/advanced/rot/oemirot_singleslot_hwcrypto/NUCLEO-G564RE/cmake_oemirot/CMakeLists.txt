@@ -60,21 +60,21 @@ add_custom_target(prebuild
 
 add_dependencies(${CMAKE_PROJECT_NAME} prebuild)
 
-# OEMiRoT post-build: generate HEX next to the target then copy into shared bin/ directory
+# OEMiRoT post-build: generate BIN next to the target then copy into shared bin/ directory
 find_program(CMAKE_OBJCOPY arm-none-eabi-objcopy REQUIRED)
 find_program(CMAKE_SIZE arm-none-eabi-size REQUIRED)
 
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
   COMMAND ${CMAKE_SIZE} $<TARGET_FILE:${CMAKE_PROJECT_NAME}>
-  COMMAND ${CMAKE_OBJCOPY} -O ihex
+  COMMAND ${CMAKE_OBJCOPY} -O binary
           $<TARGET_FILE:${CMAKE_PROJECT_NAME}>
-          $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/$<TARGET_FILE_BASE_NAME:${CMAKE_PROJECT_NAME}>.hex
+          $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/$<TARGET_FILE_BASE_NAME:${CMAKE_PROJECT_NAME}>.bin
   COMMAND ${CMAKE_COMMAND} -E make_directory
           ${CMAKE_SOURCE_DIR}/../bin
   COMMAND ${CMAKE_COMMAND} -E copy
-          $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/$<TARGET_FILE_BASE_NAME:${CMAKE_PROJECT_NAME}>.hex
-          ${CMAKE_SOURCE_DIR}/../bin/oemirot.hex
-  COMMENT "Printing size, generating HEX file, and copying it to ../bin/oemirot.hex"
+          $<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}>/$<TARGET_FILE_BASE_NAME:${CMAKE_PROJECT_NAME}>.bin
+          ${CMAKE_SOURCE_DIR}/../bin/oemirot.bin
+  COMMENT "Printing size, generating BIN file, and copying it to ../bin/oemirot.bin"
 )
 
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workspace>
+    <project>
+        <path>$WS_DIR$\ewarm_oemirot\project\oemirot_singleslot_hwcrypto.ewp</path>
+    </project>
+    <project>
+        <path>$WS_DIR$\ewarm_appli\project\appli_singleslot_hwcrypto.ewp</path>
+    </project>
+    <batchBuild>
+        <batchDefinition>
+            <name>all</name>
+            <member>
+                <project>oemirot_singleslot_hwcrypto</project>
+                <configuration>release</configuration>
+            </member>
+            <member>
+                <project>appli_singleslot_hwcrypto</project>
+                <configuration>release</configuration>
+            </member>
+        </batchDefinition>
+    </batchBuild>
+</workspace>

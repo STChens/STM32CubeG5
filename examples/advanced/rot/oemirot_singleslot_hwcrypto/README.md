@@ -11,9 +11,11 @@ OEMiRoT stands for *OEM immutable Root of Trust*. Its services include:
 - __Secure Boot__: Verifies the integrity and authenticity of the application firmware before execution.
 - __Secure Firmware Update__: Verifies and installs new encrypted firmware images when a download slot is configured.
 
-Single-slot mode uses only the primary application slot. The primary slot and OEMiRoT fit
-within one 256-KB flash bank; the other bank remains unused. Since there is no secondary
-slot, this example does not generate a firmware-update image.
+Single-slot mode uses only the primary application slot. The primary application and
+OEMiRoT image fit within one 256-KB flash bank. Provisioning also writes a copy of the
+OEMiRoT binary at the start of the second bank (`0x0C040000`); no secondary application
+slot is defined, so this example does not generate a firmware-update image. WRP/HDP
+option-byte values are mirrored from bank 1 to bank 2.
 
 The example uses overwrite installation mode. Swap mode requires a secondary slot and is not
 available in this single-slot layout.

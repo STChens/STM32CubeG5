@@ -156,7 +156,7 @@
     </Param>
     <Output>
         <Name>Image output file</Name>
-        <Value>..\..\bin\appli_provisioning_sign.bin</Value>
+        <Value>..\..\bin\appli_provisioning_sign.hex</Value>
         <Default>appli_provisioning_sign.hex</Default>
     </Output>
 </McubootFormat>
