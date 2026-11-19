@@ -24,6 +24,7 @@
 #include "ymodem.h"
 #include "fw_update_app.h"
 #include "Driver_Flash.h"
+#include "stm32g5xx_hal_flash_itf.h"
 #include <string.h>
 #include <inttypes.h>
 #include "appli_flash_layout.h"
@@ -49,6 +50,9 @@ const uint32_t MagicTrailerValue[] =
   0x8079b62c,
 };
 
+#if defined MCUBOOT_PRIMARY_ONLY
+static void FW_UPDATE_Request_BankSwitch(void);
+#endif /* MCUBOOT_PRIMARY_ONLY */
 static void FW_UPDATE_Request_AppImage_Install(void);
 #if (DATA_IMAGE_NUMBER == 1)
 static void FW_UPDATE_Request_DataImage_Install(void);
@@ -96,8 +100,12 @@ void FW_UPDATE_Run(void)
           FW_UPDATE_DownloadAppImage();
           break;
 
-        case '0' + MENU_NUM_REQUEST_APP_IMAGE_INSTALL:
+        case '0' + MENU_NUM_REQUEST_APP_IMAGE_INSTALL: 
+#if defined MCUBOOT_PRIMARY_ONLY
+          FW_UPDATE_Request_BankSwitch();
+#else          
           FW_UPDATE_Request_AppImage_Install();
+#endif
           break;
 #if (INSTALLATION_MODE == INSTALLATION_MODE_SWAP)
         case '0' + MENU_NUM_VALIDATE_APP_IMAGE:
@@ -278,7 +286,11 @@ static void FW_UPDATE_PrintWelcome(void)
 {
   printf("\r\n================ New firmware image =======================\r\n\n");
   printf("  Download app image ------------------------------------ %d\r\n\n", MENU_NUM_DOWNLOAD_APP_IMAGE);
+#if (defined MCUBOOT_PRIMARY_ONLY) 
+  printf("  Swap bank to switch to new version FW ----------------- %d\r\n\n", MENU_NUM_REQUEST_APP_IMAGE_INSTALL);
+#else
   printf("  Request installation of app image --------------------- %d\r\n\n", MENU_NUM_REQUEST_APP_IMAGE_INSTALL);
+#endif
 #if (INSTALLATION_MODE == INSTALLATION_MODE_SWAP)
   printf("  Validate app image ------------------------------------ %d\r\n\n", MENU_NUM_VALIDATE_APP_IMAGE);
 #endif /* (INSTALLATION_MODE == INSTALLATION_MODE_SWAP)*/
@@ -310,6 +322,53 @@ static void FW_UPDATE_Request_AppImage_Install(void)
     printf(" Write magic trailer: Failed \r\n\n");
   }
 }
+
+#if defined MCUBOOT_PRIMARY_ONLY
+/**
+  * @brief  Toggle the bank-swap option byte and reset the system.
+  * @param  None
+  * @retval None
+  */
+static void FW_UPDATE_Request_BankSwitch(void)
+{
+  hal_flash_itf_ob_bank_swap_t bank_swap;
+  hal_flash_itf_ob_bank_swap_t requested_bank_swap;
+
+  printf("  Request bank switch\r\n\n");
+
+  if (HAL_FLASH_ITF_OB_IsLockedBankSwap(HAL_FLASH) != HAL_FLASH_ITF_OB_BANK_SWAP_UNLOCKED)
+  {
+    printf("  -- Bank swap is locked; cannot change option byte\r\n\n");
+    return;
+  }
+
+  if ((HAL_FLASH_ITF_Unlock(HAL_FLASH) != HAL_OK)
+      || (HAL_FLASH_ITF_OB_Unlock(HAL_FLASH) != HAL_OK))
+  {
+    printf("  -- Failed to unlock Flash option-byte access\r\n\n");
+    return;
+  }
+
+  bank_swap = HAL_FLASH_ITF_OB_GetBankSwap(HAL_FLASH);
+  requested_bank_swap = (bank_swap == HAL_FLASH_ITF_OB_BANK_SWAP) ?
+                        HAL_FLASH_ITF_OB_BANK_NO_SWAP : HAL_FLASH_ITF_OB_BANK_SWAP;
+
+  if (HAL_FLASH_ITF_OB_SetBankSwap(HAL_FLASH, requested_bank_swap) != HAL_OK)
+  {
+    printf("  -- Failed to set bank-swap option byte\r\n\n");
+    return;
+  }
+
+  if (HAL_FLASH_ITF_OB_Program(HAL_FLASH) != HAL_OK)
+  {
+    printf("  -- Failed to program Flash option bytes\r\n\n");
+    return;
+  }
+
+  printf("  -- Bank-swap option byte updated; resetting system\r\n\n");
+  NVIC_SystemReset();
+}
+#endif /* MCUBOOT_PRIMARY_ONLY */
 
 /**
   * @brief Download a new Firmware from the host.

@@ -36,6 +36,8 @@ This example contains two projects:
 - **User application**: The main firmware image to protect.
 
 This single-slot example does not provide in-application firmware updates.
+The application postbuild generates both `appli_provisioning_sign.hex` and
+`appli_provisioning_sign.bin`.
 
 Supporting Python scripts include:
 
