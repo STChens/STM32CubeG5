@@ -116,11 +116,11 @@
                 </option>
                 <option>
                     <name>OCImagesSuppressCheck1</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>OCImagesPath1</name>
-                    <state></state>
+                    <state>C:\ST\Cube\Cube2\git_G5\examples\advanced\rot\oemirot_singleslot_hwcrypto\NUCLEO-G564RE\ewarm_appli\project\release\Exe\appli_singleslot_hwcrypto.out</state>
                 </option>
                 <option>
                     <name>OCImagesSuppressCheck2</name>
@@ -144,7 +144,7 @@
                 </option>
                 <option>
                     <name>OCImagesOffset1</name>
-                    <state></state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>OCImagesOffset2</name>
@@ -156,7 +156,7 @@
                 </option>
                 <option>
                     <name>OCImagesUse1</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>OCImagesUse2</name>

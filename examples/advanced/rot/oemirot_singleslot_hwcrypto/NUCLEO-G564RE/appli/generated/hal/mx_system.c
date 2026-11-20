@@ -20,6 +20,10 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "mx_hash.h"
+#include "mx_pka.h"
+#include "mx_rng.h"
+#include "mx_saes.h"
 #include "mx_system.h"
 
 /* Private typedef -----------------------------------------------------------*/

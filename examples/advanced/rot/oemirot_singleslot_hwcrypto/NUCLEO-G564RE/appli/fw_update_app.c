@@ -29,6 +29,38 @@
 #include <inttypes.h>
 #include "appli_flash_layout.h"
 
+#if defined MCUBOOT_PRIMARY_ONLY
+#include "bootutil_priv.h"
+#include "bootutil/security_cnt.h"
+#include "boot_hal_imagevalid.h"
+#include "boot_hal_hash_ref.h"
+#include "mx_hash.h"
+#include "mx_pka.h"
+#include "mx_saes.h"
+#include "psa/crypto.h"
+#include "mbedtls/memory_buffer_alloc.h"
+
+/* Allow to be customized by the project else the default value is applied */
+#if !defined(ROT_MBEDTLS_MEM_BUF_LEN)
+#ifdef MCUBOOT_ENCRYPT_RSA
+#define ROT_MBEDTLS_MEM_BUF_LEN 0x2500
+#else
+#define ROT_MBEDTLS_MEM_BUF_LEN 0x2000
+#endif /* MCUBOOT_ENCRYPT_RSA */
+#endif /* !ROT_MBEDTLS_MEM_BUF_LEN */
+
+/* Static buffer to be used by mbedtls for memory allocation */
+#ifdef __ICCARM__
+__NO_INIT static uint8_t mbedtls_mem_buf[ROT_MBEDTLS_MEM_BUF_LEN];
+#else
+static uint8_t mbedtls_mem_buf[ROT_MBEDTLS_MEM_BUF_LEN] __attribute__((section(".bss.NoInit"))) ;
+#endif /* __ICCARM__ */
+
+#if !defined(MCUBOOT_HW_ROLLBACK_PROT)
+#error "Bank-switch image validation requires MCUboot hardware rollback protection"
+#endif
+#endif /* MCUBOOT_PRIMARY_ONLY */
+
 #if (FLASH_SECONDARY_APP_SLOT_SIZE > 0U) || (defined MCUBOOT_PRIMARY_ONLY)
 
 extern ARM_DRIVER_FLASH FLASH_PRIMARY_DEV_NAME;
@@ -51,6 +83,8 @@ const uint32_t MagicTrailerValue[] =
 };
 
 #if defined MCUBOOT_PRIMARY_ONLY
+static hal_status_t FW_UPDATE_ValidateBankImage(void);
+static void FW_UPDATE_ValidateAndRequestBankSwitch(void);
 static void FW_UPDATE_Request_BankSwitch(void);
 #endif /* MCUBOOT_PRIMARY_ONLY */
 static void FW_UPDATE_Request_AppImage_Install(void);
@@ -102,7 +136,7 @@ void FW_UPDATE_Run(void)
 
         case '0' + MENU_NUM_REQUEST_APP_IMAGE_INSTALL: 
 #if defined MCUBOOT_PRIMARY_ONLY
-          FW_UPDATE_Request_BankSwitch();
+          FW_UPDATE_ValidateAndRequestBankSwitch();
 #else          
           FW_UPDATE_Request_AppImage_Install();
 #endif
@@ -287,7 +321,7 @@ static void FW_UPDATE_PrintWelcome(void)
   printf("\r\n================ New firmware image =======================\r\n\n");
   printf("  Download app image ------------------------------------ %d\r\n\n", MENU_NUM_DOWNLOAD_APP_IMAGE);
 #if (defined MCUBOOT_PRIMARY_ONLY) 
-  printf("  Swap bank to switch to new version FW ----------------- %d\r\n\n", MENU_NUM_REQUEST_APP_IMAGE_INSTALL);
+  printf("  Verify FW in second slot and swap if valid ------------ %d\r\n\n", MENU_NUM_REQUEST_APP_IMAGE_INSTALL);
 #else
   printf("  Request installation of app image --------------------- %d\r\n\n", MENU_NUM_REQUEST_APP_IMAGE_INSTALL);
 #endif
@@ -324,6 +358,12 @@ static void FW_UPDATE_Request_AppImage_Install(void)
 }
 
 #if defined MCUBOOT_PRIMARY_ONLY
+#if defined(MCUBOOT_DOUBLE_SIGN_VERIF)
+uint8_t ImageValidEnable = 0U;
+uint8_t ImageValidIndex = 0U;
+uint8_t ImageValidStatus[MCUBOOT_IMAGE_NUMBER] = {0U};
+#endif /* MCUBOOT_DOUBLE_SIGN_VERIF */
+
 /**
   * @brief  Toggle the bank-swap option byte and reset the system.
   * @param  None
@@ -367,6 +407,104 @@ static void FW_UPDATE_Request_BankSwitch(void)
 
   printf("  -- Bank-swap option byte updated; resetting system\r\n\n");
   NVIC_SystemReset();
+}
+
+/**
+  * @brief  Validate the firmware in the other bank using MCUboot validation.
+  * @param  None
+  * @retval HAL status
+  */
+static hal_status_t FW_UPDATE_ValidateBankImage(void)
+{
+  static uint8_t tmp_buf[BOOT_TMPBUF_SZ];
+  const struct flash_area *primary_fap = NULL;
+  struct flash_area bank_fap;
+  struct image_header image_hdr;
+  FIH_DECLARE(fih_rc, FIH_FAILURE);
+
+  if (flash_area_open(FLASH_AREA_IMAGE_PRIMARY(0), &primary_fap) != 0)
+  {
+    printf("  -- Failed to open the primary flash area\r\n\n");
+    return HAL_ERROR;
+  }
+
+  bank_fap = *primary_fap;
+  flash_area_close(primary_fap);
+  bank_fap.fa_id = FLASH_AREA_IMAGE_SECONDARY(0);
+  bank_fap.fa_driver = &FLASH_SECONDARY_DEV_NAME;
+  bank_fap.fa_off = FLASH_PRIMARY_APP_SLOT_OFFSET + BANK_SIZE;
+  bank_fap.fa_size = FLASH_PRIMARY_APP_SLOT_SIZE;
+
+  if (flash_area_read(&bank_fap, 0U, &image_hdr, sizeof(image_hdr)) != 0)
+  {
+    printf("  -- Failed to read the firmware header from the other bank\r\n\n");
+    return HAL_ERROR;
+  }
+
+  if ((image_hdr.ih_magic != IMAGE_MAGIC)
+      || (image_hdr.ih_hdr_size > bank_fap.fa_size)
+      || (image_hdr.ih_img_size >= (bank_fap.fa_size - image_hdr.ih_hdr_size))
+      || ((image_hdr.ih_flags & IMAGE_F_NON_BOOTABLE) != 0U)
+      /*|| IS_ENCRYPTED(&image_hdr)*/)
+  {
+    printf("  -- Firmware header is invalid or not bank-switchable\r\n\n");
+    return HAL_ERROR;
+  }
+
+  FIH_CALL(boot_nv_security_counter_init, fih_rc);
+  if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS))
+  {
+    printf("  -- Failed to initialize the anti-rollback counter\r\n\n");
+    return HAL_ERROR;
+  }
+
+  if (boot_hash_ref_load() != 0)
+  {
+    printf("  -- Failed to load hash references from shared RAM\r\n\n");
+    return HAL_ERROR;
+  }
+
+  /* Initialise the mbedtls static memory allocator so that mbedtls allocates
+   * memory from the provided static buffer instead of from the heap.
+   */
+  mbedtls_memory_buffer_alloc_init(mbedtls_mem_buf, ROT_MBEDTLS_MEM_BUF_LEN);
+
+  if (psa_crypto_init() != PSA_SUCCESS)
+  {
+    printf("  -- Failed to initialize PSA Crypto\r\n\n");
+    return HAL_ERROR;
+  }
+
+  ImageValidEnable = 0U;
+  ImageValidIndex = 0U;
+  FIH_CALL(bootutil_img_validate, fih_rc, NULL, 0, &image_hdr, &bank_fap,
+           tmp_buf, sizeof(tmp_buf), NULL, 0, NULL);
+  if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS))
+  {
+    printf("  -- MCUboot firmware validation failed (signature, hash, or anti-rollback)\r\n\n");
+    return HAL_ERROR;
+  }
+
+  return HAL_OK;
+}
+
+/**
+  * @brief  Validate the firmware in the other bank and switch to it if valid.
+  * @param  None
+  * @retval None
+  */
+static void FW_UPDATE_ValidateAndRequestBankSwitch(void)
+{
+  printf("  Verify firmware in the other bank\r\n\n");
+
+  if (FW_UPDATE_ValidateBankImage() != HAL_OK)
+  {
+    printf("  -- Firmware verification failed; bank switch cancelled\r\n\n");
+    return;
+  }
+
+  printf("  -- Firmware verified successfully\r\n\n");
+  FW_UPDATE_Request_BankSwitch();
 }
 #endif /* MCUBOOT_PRIMARY_ONLY */
 

@@ -23,13 +23,18 @@ define symbol ROM_ROT_SIZE = 0x18000;
 define symbol RAM_ROT_ADDRESS = 0x30000000;
 define symbol RAM_ROT_SIZE = 0x5000;
 
+define symbol MCUBOOT_SHARED_RAM_ADDRESS = 0x3001B000;
+define symbol MCUBOOT_SHARED_RAM_SIZE = 0x1000;
+
 define memory mem with size = 4G;
 define region ROM = mem:[from ROM_ROT_ADDRESS size ROM_ROT_SIZE];
 define region RAM = mem:[from RAM_ROT_ADDRESS size RAM_ROT_SIZE];
+define region MCUBOOT_SHARED_REGION = mem:[from MCUBOOT_SHARED_RAM_ADDRESS size MCUBOOT_SHARED_RAM_SIZE];
 
 /* define blocks */
 define block HEAP with alignment = 8, size = 0x0 { };
 define block CSTACK with alignment = 8, size = 0x1000 { };
+define block MCUBOOT_SHARED_RAM_BLOCK with alignment = 8, size = MCUBOOT_SHARED_RAM_SIZE { };
 define block CODE with fixed order, alignment = 8 {
        readonly,
        readonly section .ROT_Error_Code
@@ -57,3 +62,5 @@ place in RAM {
   block HEAP,
   block CSTACK
 };
+
+place at start of MCUBOOT_SHARED_REGION { block MCUBOOT_SHARED_RAM_BLOCK };

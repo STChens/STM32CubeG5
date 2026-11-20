@@ -38,6 +38,7 @@
 #include "bootutil_priv.h"
 #include "mx_basic_stdio_app.h"
 #include "mx_hal_def.h"
+#include "../shared/mcuboot_shared_data.h"
 
 #if defined(MCUBOOT_DOUBLE_SIGN_VERIF)
 #if (MCUBOOT_IMAGE_NUMBER == 1)
@@ -296,6 +297,8 @@ fih_ret boot_platform_vector_table(struct boot_arm_vector_table **vt)
 void boot_platform_quit(struct boot_arm_vector_table *vector)
 {
   struct boot_arm_vector_table *vt = NULL;
+  obk_hdpl1_data_t OBK_data = { 0U };
+  volatile mcuboot_shared_data_t *shared = mcuboot_shared_data_ptr();
   uint32_t rsslib_jump_hdp_lvl2 = 0U;
 #if defined(MCUBOOT_DOUBLE_SIGN_VERIF)
   uint32_t image_index;
@@ -332,6 +335,26 @@ void boot_platform_quit(struct boot_arm_vector_table *vector)
     Error_Handler();
   }
 #endif /* MCUBOOT_USE_HASH_REF */
+
+  shared->magic = 0U;
+  __DSB();
+  if (OBK_ReadHdpl1Data(&OBK_data) != HAL_OK)
+  {
+    ROT_LOG_ERR("Error while reading OBK data for the application");
+    Error_Handler();
+  }
+  shared->version = MCUBOOT_SHARED_DATA_VERSION;
+  shared->size = sizeof(*shared);
+  shared->magic_inverse = ~MCUBOOT_SHARED_DATA_MAGIC;
+  mcuboot_shared_copy_to((volatile uint8_t *)&shared->hdpl1_config,
+                         (const uint8_t *)&OBK_Hdpl1Cfg,
+                         sizeof(OBK_Hdpl1Cfg));
+  mcuboot_shared_copy_to((volatile uint8_t *)&shared->hdpl1_data,
+                         (const uint8_t *)&OBK_data,
+                         sizeof(OBK_data));
+  __DSB();
+  shared->magic = MCUBOOT_SHARED_DATA_MAGIC;
+  __DSB();
 
   /* Check Flow control state */
   FLOW_CONTROL_CHECK(uFlowProtectValue, FLOW_CTRL_STAGE_2);

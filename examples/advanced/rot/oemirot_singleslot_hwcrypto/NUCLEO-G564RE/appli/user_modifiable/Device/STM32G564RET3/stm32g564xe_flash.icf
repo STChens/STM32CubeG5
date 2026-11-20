@@ -22,17 +22,22 @@ define symbol ROM_APPLI_SIZE                  = 0x27C00;
 define symbol RAM_APPLI_ADDRESS               = 0x30000000;
 define symbol RAM_APPLI_SIZE                  = 0x10000;
 
+define symbol MCUBOOT_SHARED_RAM_ADDRESS      = 0x3001B000;
+define symbol MCUBOOT_SHARED_RAM_SIZE         = 0x1000;
+
 define symbol __ICFEDIT_intvec_start__        = ROM_APPLI_ADDRESS;
 
-define symbol __ICFEDIT_size_cstack__         = 0x400;
+define symbol __ICFEDIT_size_cstack__         = 0x1000;
 define symbol __ICFEDIT_size_heap__           = 0x200;
 
 define memory mem with size = 4G;
 define region ROM = mem:[from ROM_APPLI_ADDRESS size ROM_APPLI_SIZE];
 define region RAM = mem:[from RAM_APPLI_ADDRESS size RAM_APPLI_SIZE];
+define region MCUBOOT_SHARED_REGION = mem:[from MCUBOOT_SHARED_RAM_ADDRESS size MCUBOOT_SHARED_RAM_SIZE];
 
 define block CSTACK    with alignment = 8, size = __ICFEDIT_size_cstack__   { };
 define block HEAP      with alignment = 8, size = __ICFEDIT_size_heap__     { };
+define block MCUBOOT_SHARED_RAM_BLOCK with alignment = 8, size = MCUBOOT_SHARED_RAM_SIZE { };
 
 define block ER_CODE     with alignment = 8 {readonly};
 define block ER_CODE_END with alignment = 32, size = 0 { };
@@ -51,3 +56,5 @@ place in RAM {
   block HEAP,
   block STACKSEAL
 };
+
+place at start of MCUBOOT_SHARED_REGION { block MCUBOOT_SHARED_RAM_BLOCK };

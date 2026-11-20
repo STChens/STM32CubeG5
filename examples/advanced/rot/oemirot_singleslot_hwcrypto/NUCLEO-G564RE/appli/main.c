@@ -31,6 +31,7 @@
 #include "mx_basic_stdio_app.h"
 #include "fw_update_app.h"
 #include "appli_flash_layout.h"
+#include "low_level_rng.h"
 
 extern ARM_DRIVER_FLASH FLASH_PRIMARY_DEV_NAME;
 extern ARM_DRIVER_FLASH FLASH_SECONDARY_DEV_NAME;
@@ -56,6 +57,58 @@ void FW_APP_Run(void);
 void read_version(void);
 void display_version(const char *label, const version_t *ver);
 static void mpu_disable_all_regions(void);
+static void crypto_reset_clocks(void);
+static void SECURITY_EnableCryptoClocks(void);
+
+/**
+  * @brief  Disable and reset the cryptography clocks.
+  * @param  None
+  * @retval None
+  */
+static void crypto_reset_clocks(void)
+{
+  /* -1- Disable the clock of all the used Crypto IPs */
+  HAL_RCC_RNG_DisableClock();
+  HAL_RCC_SAES_DisableClock();
+  HAL_RCC_HASH_DisableClock();
+  HAL_RCC_PKA_DisableClock();
+  HAL_RCC_CCB_DisableClock();
+
+  /* -2- Reset all the used Crypto IPs */
+  HAL_RCC_RNG_Reset();
+  HAL_RCC_SAES_Reset();
+  HAL_RCC_HASH_Reset();
+  HAL_RCC_PKA_Reset();
+  HAL_RCC_CCB_Reset();
+}
+
+/**
+  * @brief  Enable the cryptography clocks.
+  * @param  None
+  * @retval None
+  */
+void SECURITY_EnableCryptoClocks(void)
+{
+  /**
+    * - Stop all used Crypton S_HCLK using RCC
+    * - Drive low pulse on RNG_HRESETn, SAES_HRESETn, HASH_HRESETn, PKA_HRESETn, CCB_HRESETn using RCC
+    * - Start all used crypton clocks RNG_HCLK, HASH_HCLK, PKA_HCLK, CCB_HCLK
+    *   except SAES_HCLK (PKA can start PKA RAM clear process)
+    */
+  crypto_reset_clocks();
+
+  /* -3- Enable the clock of the used Crypto IPs */
+  HAL_RCC_RNG_EnableClock();  
+  HAL_RCC_SAES_EnableClock();  
+  HAL_RCC_PKA_EnableClock();
+  HAL_RCC_HASH_EnableClock();
+  
+  HAL_RCC_RNG_Reset();
+  HAL_RCC_SAES_Reset();
+  HAL_RCC_PKA_Reset();  
+  HAL_RCC_HASH_Reset();
+  /* CCB clock enable is not mandatory */
+}
 
 /**
   * @brief  The application entry point.
@@ -63,6 +116,7 @@ static void mpu_disable_all_regions(void);
   */
 int main(void)
 {
+  
   /**
     * When OEMIROT_FAST_WAKE_UP is enabled, the OEMiRoT relies on the hardware SBF (standby flag)
     * to skip firmware image verification. The SBF flag remains set when the application is entered
@@ -78,6 +132,9 @@ int main(void)
   pUserAppId = (uint8_t *)&UserAppId;
 
   /* MCU Configuration--------------------------------------------------------*/
+  HAL_RCC_TZSC1_EnableClock();
+  /* Configure SAES as Secure when application isolation is disabled */
+  STM32_CLEAR_BIT(GTZC1_TZSC1_PERIPH_S->SECCFGR[2], GTZC_CFGR3_SAES_Msk);
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   if (mx_system_init() != SYSTEM_OK)
@@ -92,6 +149,34 @@ int main(void)
   if (FLASH_PRIMARY_DEV_NAME.Initialize(NULL) != ARM_DRIVER_OK)
   {
     printf("Driver Flash Init : Failed");
+  }
+  
+  SECURITY_EnableCryptoClocks();
+    /** HASH */
+  if (mx_hash_init() == NULL)
+  {
+    printf("HASH init failed\r\n");
+  }
+  else
+  {
+  
+    /** PKA */
+    if (mx_pka_init() == NULL)
+    {
+      printf("PKA init failed\r\n");
+    }
+    else
+    {
+      /** SAES */
+      if (mx_saes_init() == NULL)
+      {
+        printf("SAES init failed\r\n");
+      }
+      else
+      {
+        RNG_Init();
+      }
+    }
   }
 
 #if (FLASH_PRIMARY_DEV_NAME != FLASH_SECONDARY_DEV_NAME)

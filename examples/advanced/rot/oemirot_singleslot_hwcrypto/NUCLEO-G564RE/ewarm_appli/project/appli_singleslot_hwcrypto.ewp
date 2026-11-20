@@ -367,8 +367,6 @@
                     <state>$PROJ_DIR$/../../../../../../../middleware/mcuboot/platform_common</state>
                     <state>$PROJ_DIR$/../../../../../../../middleware/stfcf/mbedtls_alt/include/common</state>
                     <state>$PROJ_DIR$/../../../../../../../middleware/stfcf/mbedtls_alt/include/hal</state>
-                    <state>$PROJ_DIR$/../../oemirot</state>
-                    <state>$PROJ_DIR$/../../oemirot/generated/middleware/stfcf</state>
                     <state>$PROJ_DIR$/../../../../../../../stm32g5xx_dfp/Include</state>
                     <state>$PROJ_DIR$/../../../../../../../stm32g5xx_drivers/hal</state>
                     <state>$PROJ_DIR$/../../../../../../../stm32g5xx_drivers/ll</state>
@@ -376,6 +374,7 @@
                     <state>$PROJ_DIR$/../../../../../../../utilities/basic_stdio</state>
                     <state>$PROJ_DIR$/../../../../../../../utilities/basic_stdio/interface_io</state>
                     <state>$PROJ_DIR$/../../appli</state>
+                    <state>$PROJ_DIR$/../../appli/generated/middleware/stfcf</state>
                     <state>$PROJ_DIR$/../../appli/generated/hal</state>
                     <state>$PROJ_DIR$/../../appli/generated/utilities/basic_stdio</state>
                     <state>$PROJ_DIR$/../../appli/user_modifiable/_release_IAR_NUCLEO-G564RE</state>
@@ -1473,8 +1472,6 @@
                         <state>$PROJ_DIR$/../../../../../../../middleware/mcuboot/platform_common</state>
                         <state>$PROJ_DIR$/../../../../../../../middleware/stfcf/mbedtls_alt/include/common</state>
                         <state>$PROJ_DIR$/../../../../../../../middleware/stfcf/mbedtls_alt/include/hal</state>
-                        <state>$PROJ_DIR$/../../oemirot</state>
-                        <state>$PROJ_DIR$/../../oemirot/generated/middleware/stfcf</state>
                         <state>$PROJ_DIR$/../../../../../../../stm32g5xx_dfp/Include</state>
                         <state>$PROJ_DIR$/../../../../../../../stm32g5xx_drivers/hal</state>
                         <state>$PROJ_DIR$/../../../../../../../stm32g5xx_drivers/ll</state>
@@ -1482,6 +1479,7 @@
                         <state>$PROJ_DIR$/../../../../../../../utilities/basic_stdio</state>
                         <state>$PROJ_DIR$/../../../../../../../utilities/basic_stdio/interface_io</state>
                         <state>$PROJ_DIR$/../../appli</state>
+                        <state>$PROJ_DIR$/../../appli/generated/middleware/stfcf</state>
                         <state>$PROJ_DIR$/../../appli/generated/hal</state>
                         <state>$PROJ_DIR$/../../appli/generated/utilities/basic_stdio</state>
                         <state>$PROJ_DIR$/../../appli/user_modifiable/_release_IAR_NUCLEO-G564RE</state>
@@ -1621,27 +1619,42 @@
         </configuration>
     </group>
     <group>
+        <name>MCUboot shared RAM support</name>
+        <file>
+            <name>$PROJ_DIR$\..\..\appli\mcuboot_shared_platform.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\shared\mcuboot_shared_data.h</name>
+        </file>
+    </group>
+    <group>
         <name>Hardware crypto support</name>
         <file>
-            <name>$PROJ_DIR$\..\..\oemirot\generated\hal\mx_hash.c</name>
+            <name>$PROJ_DIR$\..\..\appli\low_level_rng.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\appli\low_level_rng.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\appli\generated\hal\mx_hash.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\appli\generated\hal\mx_hash.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\oemirot\generated\hal\mx_pka.c</name>
+            <name>$PROJ_DIR$\..\..\appli\generated\hal\mx_pka.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\appli\generated\hal\mx_pka.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\oemirot\generated\hal\mx_rng.c</name>
+            <name>$PROJ_DIR$\..\..\appli\generated\hal\mx_rng.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\appli\generated\hal\mx_rng.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\oemirot\generated\hal\mx_saes.c</name>
+            <name>$PROJ_DIR$\..\..\appli\generated\hal\mx_saes.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\appli\generated\hal\mx_saes.h</name>
@@ -1662,37 +1675,43 @@
     <group>
         <name>MCUboot and mbedTLS configuration</name>
         <file>
-            <name>$PROJ_DIR$\..\..\oemirot\boot_hal_cfg.h</name>
+            <name>$PROJ_DIR$\..\..\appli\boot_hal_cfg.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\oemirot\boot_hal_hash_ref.h</name>
+            <name>$PROJ_DIR$\..\..\appli\boot_hal_hash_ref.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\oemirot\boot_hal_imagevalid.h</name>
+            <name>$PROJ_DIR$\..\..\appli\boot_hal_imagevalid.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\oemirot\boot_hal_utils.h</name>
+            <name>$PROJ_DIR$\..\..\appli\boot_hal_utils.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\oemirot\flash_layout.h</name>
+            <name>$PROJ_DIR$\..\..\appli\flash_layout.h</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\appli\fw_update_pre_include_global.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\oemirot\low_level_security_config.h</name>
+            <name>$PROJ_DIR$\..\..\appli\low_level_obkeys.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\oemirot\mcuboot_config.h</name>
+            <name>$PROJ_DIR$\..\..\appli\low_level_security_config.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\oemirot\generated\middleware\stfcf\mx_mbedtls_alt_config.h</name>
+            <name>$PROJ_DIR$\..\..\appli\mcuboot_config.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\oemirot\generated\middleware\stfcf\mx_mbedtls_config.h</name>
+            <name>$PROJ_DIR$\..\..\appli\region_defs.h</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\oemirot\generated\middleware\stfcf\mx_stfcf_config.h</name>
+            <name>$PROJ_DIR$\..\..\appli\generated\middleware\stfcf\mx_mbedtls_alt_config.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\appli\generated\middleware\stfcf\mx_mbedtls_config.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\appli\generated\middleware\stfcf\mx_stfcf_config.h</name>
         </file>
     </group>
     <group>

@@ -135,5 +135,15 @@ system_status_t mx_rcc_peripherals_clock_config(void)
     USART2
   */
 
+  /* Resources using HSI48 (48 MHz):
+    RNG
+    PKA
+    SAES
+  */
+  if (HAL_RCC_HSI48_Enable() != HAL_OK)
+  {
+    return SYSTEM_CLOCK_ERROR;
+  }
+
   return SYSTEM_OK;
 }

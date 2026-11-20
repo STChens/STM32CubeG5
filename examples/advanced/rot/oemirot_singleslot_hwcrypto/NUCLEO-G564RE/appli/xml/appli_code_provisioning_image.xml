@@ -16,29 +16,6 @@
         <Default />
     </Param>
     <Param>
-        <Name>Encryption key</Name>
-        <Link>GetPublic</Link>
-        <Type>File</Type>
-        <Command>-E</Command>
-        <Enable>1</Enable>
-        <Hidden>1</Hidden>
-        <Default />
-    </Param>
-    <Param>
-        <Name>No encryption (clear)</Name>
-        <Type>Data</Type>
-        <Command>-c</Command>
-        <Hidden>1</Hidden>
-        <Default />
-    </Param>
-    <Param>
-        <Name>Symmetric key length</Name>
-        <Type>Data</Type>
-        <Command>--encrypt-keylen</Command>
-        <Hidden>1</Hidden>
-        <Default>256</Default>
-    </Param>
-    <Param>
         <Name>Endianness</Name>
         <Type>Data</Type>
         <Command>-e</Command>

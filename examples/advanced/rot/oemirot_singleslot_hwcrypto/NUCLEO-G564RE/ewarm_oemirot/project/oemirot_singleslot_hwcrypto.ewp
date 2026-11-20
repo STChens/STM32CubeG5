@@ -2059,6 +2059,9 @@
             <name>$PROJ_DIR$\..\..\oemirot\boot_hal_imagevalid.h</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\..\..\shared\mcuboot_shared_data.h</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\..\oemirot\boot_hal_legacy.h</name>
         </file>
         <file>
