@@ -32,6 +32,7 @@
 #include "fw_update_app.h"
 #include "appli_flash_layout.h"
 #include "low_level_rng.h"
+#include "appli_led_timer.h"
 
 extern ARM_DRIVER_FLASH FLASH_PRIMARY_DEV_NAME;
 extern ARM_DRIVER_FLASH FLASH_SECONDARY_DEV_NAME;
@@ -144,6 +145,12 @@ int main(void)
 
   /* Initialize basic_stdio separately, but after system init. */
   mx_basic_stdio_init();
+
+  if (appli_led_timer_init() != SYSTEM_OK)
+  {
+    printf("LED timer init failed\r\n");
+    return (-1);
+  }
 
   /* Initialize Flash */
   if (FLASH_PRIMARY_DEV_NAME.Initialize(NULL) != ARM_DRIVER_OK)

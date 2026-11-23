@@ -1628,6 +1628,15 @@
         </file>
     </group>
     <group>
+        <name>LED blink timer</name>
+        <file>
+            <name>$PROJ_DIR$\..\..\appli\appli_led_timer.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\appli\appli_led_timer.h</name>
+        </file>
+    </group>
+    <group>
         <name>Hardware crypto support</name>
         <file>
             <name>$PROJ_DIR$\..\..\appli\low_level_rng.c</name>
